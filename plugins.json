@@ -1,0 +1,59 @@
+[
+    {
+        "iconUrl": "https://www.google.com/s2/favicons?domain=filman.cc&sz=%size%",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/rafalohaki/cs-pl",
+        "fileSize": 12590,
+        "status": 1,
+        "language": "pl",
+        "authors": [
+            
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 2,
+        "internalName": "FilmanProvider",
+        "url": "https://raw.githubusercontent.com/rafalohaki/cs-pl/builds/FilmanProvider.cs3",
+        "name": "FilmanProvider"
+    },
+    {
+        "iconUrl": "https://www.google.com/s2/favicons?domain=vizjer.pl&sz=%size%",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/rafalohaki/cs-pl",
+        "fileSize": 12281,
+        "status": 1,
+        "language": "pl",
+        "authors": [
+            "Cloudburst"
+        ],
+        "tvTypes": [
+            "Movie",
+            "TvSeries"
+        ],
+        "version": 3,
+        "internalName": "VizjerProvider",
+        "url": "https://raw.githubusercontent.com/rafalohaki/cs-pl/builds/VizjerProvider.cs3",
+        "name": "VizjerProvider"
+    },
+    {
+        "iconUrl": "https://www.google.com/s2/favicons?domain=zaluknij.xyz&sz=%size%",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/rafalohaki/cs-pl",
+        "fileSize": 12300,
+        "status": 1,
+        "language": "pl",
+        "authors": [
+            "Cloudburst"
+        ],
+        "tvTypes": [
+            "Movie",
+            "TvSeries"
+        ],
+        "version": 2,
+        "internalName": "ZaluknijProvider",
+        "url": "https://raw.githubusercontent.com/rafalohaki/cs-pl/builds/ZaluknijProvider.cs3",
+        "name": "ZaluknijProvider"
+    }
+]

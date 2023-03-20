@@ -1,0 +1,8 @@
+{
+    "name": "POLSKA GUROM",
+    "description": "Polskie providery",
+    "manifestVersion": 1,
+    "pluginLists": [
+      "https://raw.githubusercontent.com/rafalohaki/cs-pl/builds/plugins.json"
+    ]
+}
