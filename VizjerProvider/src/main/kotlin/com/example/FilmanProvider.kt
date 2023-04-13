@@ -8,41 +8,35 @@ import com.lagradost.cloudstream3.utils.loadExtractor
 import org.jsoup.Jsoup
 import org.jsoup.select.Elements
 
-class FilmanProvider : MainAPI() {
-    override var mainUrl = "https://filman.cc"
-    override var name = "Filman.cc"
+class VizjerProvider : MainAPI() {
+    override var mainUrl = "http://93.185.166.160"
+    override var name = "Vizjer.pl"
     override var lang = "pl"
     override val hasMainPage = true
+    override val usesWebView = true
     override val supportedTypes = setOf(
-        TvType.Movie,
-        TvType.TvSeries
+        TvType.TvSeries,
+        TvType.Movie
     )
 
     override suspend fun getMainPage(page: Int, request : MainPageRequest): HomePageResponse {
         val document = app.get(mainUrl).document
-        val lists = document.select("#item-list,#series-list")
+        val lists = document.select(".item-list")
         val categories = ArrayList<HomePageList>()
         for (l in lists) {
             val title = capitalizeString(l.parent()!!.select("h3").text().lowercase())
             val items = l.select(".poster").map { i ->
-                val name = i.select("a[href]").attr("title")
-                val href = i.select("a[href]").attr("href")
+                val a = i.parent()!!
+                val name = a.attr("title")
+                val href = a.attr("href")
                 val poster = i.select("img[src]").attr("src")
-                val year = l.select(".film_year").text().toIntOrNull()
-                if (l.hasClass("series-list")) TvSeriesSearchResponse(
+                val year = a.select(".year").text().toIntOrNull()
+                MovieSearchResponse(
                     name,
-                    href,
-                    this.name,
-                    TvType.TvSeries,
-                    poster,
-                    year,
-                    null
-                ) else MovieSearchResponse(
-                    name,
-                    href,
+                    properUrl(href)!!,
                     this.name,
                     TvType.Movie,
-                    poster,
+                    properUrl(poster)!!,
                     year
                 )
             }
@@ -52,31 +46,30 @@ class FilmanProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val url = "$mainUrl/wyszukiwarka?phrase=$query"
+        val url = "$mainUrl/wyszukaj?phrase=$query"
         val document = app.get(url).document
         val lists = document.select("#advanced-search > div")
-        val movies = lists[1].select("#item-list > div:not(.clearfix)")
-        val series = lists[3].select("#item-list > div:not(.clearfix)")
+        val movies = lists[1].select("div:not(.clearfix)")
+        val series = lists[3].select("div:not(.clearfix)")
         if (movies.isEmpty() && series.isEmpty()) return ArrayList()
         fun getVideos(type: TvType, items: Elements): List<SearchResponse> {
             return items.mapNotNull { i ->
-                val href = i.selectFirst(".poster > a")?.attr("href") ?: return@mapNotNull null
+                val href = i.selectFirst("a")?.attr("href") ?: return@mapNotNull null
                 val img =
-                    i.selectFirst(".poster > a > img")?.attr("src")?.replace("/thumb/", "/big/")
-                val name = i.selectFirst(".film_title")?.text() ?: return@mapNotNull null
-                val year = i.selectFirst(".film_year")?.text()?.toIntOrNull()
+                    i.selectFirst("a > img[src]")?.attr("src")?.replace("/thumb/", "/big/")
+                val name = i.selectFirst(".title")?.text() ?: return@mapNotNull null
                 if (type === TvType.TvSeries) {
                     TvSeriesSearchResponse(
                         name,
-                        href,
+                        properUrl(href)!!,
                         this.name,
                         type,
-                        img,
-                        year,
+                        properUrl(img)!!,
+                        null,
                         null
                     )
                 } else {
-                    MovieSearchResponse(name, href, this.name, type, img, year)
+                    MovieSearchResponse(name, properUrl(href)!!, this.name, type, properUrl(img)!!, null)
                 }
             }
         }
@@ -91,16 +84,15 @@ class FilmanProvider : MainAPI() {
             throw RuntimeException("This page seems to be locked behind a login-wall on the website, unable to scrape it. If it is not please report it.")
         }
 
-        var title = document.select("span[itemprop=title]").text()
-        val data = document.select("#links").outerHtml()
+        var title = document.select("span[itemprop=name]").text()
+        val data = document.select("#link-list").outerHtml()
         val posterUrl = document.select("#single-poster > img").attr("src")
-        val year = document.select(".info > ul > li").getOrNull(1)?.text()?.toIntOrNull()
         val plot = document.select(".description").text()
         val episodesElements = document.select("#episode-list a[href]")
         if (episodesElements.isEmpty()) {
-            return MovieLoadResponse(title, url, name, TvType.Movie, data, posterUrl, year, plot)
+            return MovieLoadResponse(title, properUrl(url)!!, name, TvType.Movie, data, properUrl(posterUrl)!!, null, plot)
         }
-        title = document.selectFirst(".info")?.parent()?.select("h2")?.text() ?: ""
+        title = document.selectFirst(".info")?.parent()?.select("h2")?.text()!!
         val episodes = episodesElements.mapNotNull { episode ->
             val e = episode.text()
             val regex = Regex("""\[s(\d{1,3})e(\d{1,3})]""").find(e) ?: return@mapNotNull null
@@ -115,12 +107,12 @@ class FilmanProvider : MainAPI() {
 
         return TvSeriesLoadResponse(
             title,
-            url,
+            properUrl(url)!!,
             name,
             TvType.TvSeries,
             episodes,
-            posterUrl,
-            year,
+            properUrl(posterUrl)!!,
+            null,
             plot
         )
     }
@@ -132,7 +124,9 @@ class FilmanProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val document = if (data.startsWith("http"))
-            app.get(data).document.select("#links").first()
+            app.get(data).document.select("#link-list").first()
+        else if (data.startsWith("URL"))
+            app.get(properUrl(data)!!).document.select("#link-list").first()
         else Jsoup.parse(data)
 
         document?.select(".link-to-video")?.apmap { item ->
@@ -141,6 +135,17 @@ class FilmanProvider : MainAPI() {
             loadExtractor(link, subtitleCallback, callback)
         }
         return true
+    }
+
+    private fun properUrl(inUrl: String?): String? {
+        if (inUrl == null) return null
+
+        return fixUrl(
+            inUrl.replace(
+                "^URL".toRegex(),
+                "/"
+            )
+        )
     }
 }
 
