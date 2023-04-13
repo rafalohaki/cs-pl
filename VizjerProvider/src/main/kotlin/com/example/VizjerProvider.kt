@@ -9,7 +9,7 @@ import org.jsoup.Jsoup
 import org.jsoup.select.Elements
 
 class VizjerProvider : MainAPI() {
-    override var mainUrl = "http://93.185.166.160"
+    override var mainUrl = "https://vizjer.pl"
     override var name = "Vizjer.pl"
     override var lang = "pl"
     override val hasMainPage = true
